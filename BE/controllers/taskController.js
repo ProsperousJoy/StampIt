@@ -35,7 +35,7 @@ module.exports.createTask = async (req, res) => {
 
     res.status(201).json(task)
   } catch (error) {
-    console.error('Error in createTask controller:', error)
+    console.error(error)
     res.status(500).json({ message: 'Error creating task' })
   }
 }
@@ -132,7 +132,7 @@ module.exports.updateTaskStatus = async (req, res) => {
 
     res.json(updatedTask)
   } catch (error) {
-    console.error('Error in updateTaskStatus controller:', error)
+    console.error(error)
     res.status(500).json({ message: 'Error updating task' })
   }
 }
@@ -152,7 +152,7 @@ module.exports.getUserTasks = async (req, res) => {
 
     res.json(tasks)
   } catch (error) {
-    console.error('Error in getUserTasks controller:', error)
+    console.error(error)
     res.status(500).json({ message: 'Error fetching tasks' })
   }
 }
