@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "mysql"
   url      = env("DB_URL")
 }
 
@@ -26,44 +26,45 @@ enum BoardPeriod {
 }
 
 model Task {
-  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  id          String      @id @default(uuid()) // Changed from auto() and ObjectId
   title       String
   description String
   status      TaskStatus  @default(TODO)
   date        DateTime    @default(now())
-  userId      String      @db.ObjectId
+  userId      String      // Removed @db.ObjectId
   user        User        @relation(fields: [userId], references: [id])
-  stampId     String?     @db.ObjectId
+  stampId     String?     // Removed @db.ObjectId
   stamp       Stamp?      @relation(fields: [stampId], references: [id])
 }
 
 model Stamp {
-  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  id            String      @id @default(uuid()) // Changed from auto() and ObjectId
   design        StampDesign
   dateCompleted DateTime    @default(now())
   quote         String
   tasks         Task[]
-  userId        String      @db.ObjectId
+  userId        String      // Removed @db.ObjectId
   user          User        @relation(fields: [userId], references: [id])
-  boardId       String      @db.ObjectId
+  boardId       String      // Removed @db.ObjectId
   board         StampBoard  @relation(fields: [boardId], references: [id])
 }
 
 model StampBoard {
-  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  id            String       @id @default(uuid()) // Changed from auto() and ObjectId
   period        BoardPeriod  @default(WEEKLY)
   startDate     DateTime     @default(now())
   endDate       DateTime
   stamps        Stamp[]
-  userId        String       @db.ObjectId
+  userId        String       // Removed @db.ObjectId
   user          User         @relation(fields: [userId], references: [id])
 }
 
 model User {
-  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  id            String        @id @default(uuid()) // Changed from auto() and ObjectId
   email         String        @unique
+  password      String        
   name          String?
-  tasks         Task[]        
-  stamps        Stamp[]      
+  tasks         Task[]
+  stamps        Stamp[]
   stampBoards   StampBoard[]
 }

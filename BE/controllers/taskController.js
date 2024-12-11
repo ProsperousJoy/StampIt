@@ -5,6 +5,8 @@ module.exports.createTask = async (req, res) => {
     const { title, description } = req.body
     const userId = req.userId
 
+    console.log('Creating task for user:', userId)
+
     // Check if user already has 3 TODO tasks
     const todoTasksCount = await prisma.task.count({
       where: { 
@@ -13,7 +15,10 @@ module.exports.createTask = async (req, res) => {
       }
     })
 
+    console.log('Current TODO task count for user', userId, ':', todoTasksCount)
+
     if (todoTasksCount >= 3) {
+      console.log('User already has 3 TODO tasks. Returning error.')
       return res.status(400).json({ message: 'You can only have 3 tasks at a time' })
     }
 
@@ -26,9 +31,11 @@ module.exports.createTask = async (req, res) => {
       }
     })
 
+    console.log('Task created successfully:', task)
+
     res.status(201).json(task)
   } catch (error) {
-    console.error(error)
+    console.error('Error in createTask controller:', error)
     res.status(500).json({ message: 'Error creating task' })
   }
 }
@@ -39,11 +46,19 @@ module.exports.updateTaskStatus = async (req, res) => {
     const { status } = req.body
     const userId = req.userId
 
+    console.log('Updating task status for task:', taskId, 'by user:', userId)
+
     const task = await prisma.task.findUnique({
       where: { id: taskId }
     })
 
-    if (!task || task.userId !== userId) {
+    if (!task) {
+      console.log('Task not found:', taskId)
+      return res.status(404).json({ message: 'Task not found' })
+    }
+
+    if (task.userId !== userId) {
+      console.log('User does not own the task:', userId, 'vs task userId:', task.userId)
       return res.status(404).json({ message: 'Task not found' })
     }
 
@@ -52,6 +67,8 @@ module.exports.updateTaskStatus = async (req, res) => {
       data: { status }
     })
 
+    console.log('Task status updated:', updatedTask)
+
     // Check if user has completed 3 tasks to create a stamp
     const completedTasksCount = await prisma.task.count({
       where: { 
@@ -59,6 +76,8 @@ module.exports.updateTaskStatus = async (req, res) => {
         status: 'COMPLETED' 
       }
     })
+
+    console.log('Completed tasks count for user', userId, ':', completedTasksCount)
 
     if (completedTasksCount >= 3) {
       // Get the current active stamp board
@@ -70,6 +89,8 @@ module.exports.updateTaskStatus = async (req, res) => {
       })
 
       if (currentBoard) {
+        console.log('Found active stamp board:', currentBoard.id)
+
         // Create a new stamp
         const stamp = await prisma.stamp.create({
           data: {
@@ -90,6 +111,8 @@ module.exports.updateTaskStatus = async (req, res) => {
           }
         })
 
+        console.log('New stamp created:', stamp)
+
         // Reset completed tasks
         await prisma.task.updateMany({
           where: { 
@@ -99,13 +122,17 @@ module.exports.updateTaskStatus = async (req, res) => {
           data: { status: 'TODO' }
         })
 
+        console.log('Completed tasks reset to TODO')
+
         return res.json({ task: updatedTask, stamp })
+      } else {
+        console.log('No active stamp board found for user:', userId)
       }
     }
 
     res.json(updatedTask)
   } catch (error) {
-    console.error(error)
+    console.error('Error in updateTaskStatus controller:', error)
     res.status(500).json({ message: 'Error updating task' })
   }
 }
@@ -114,14 +141,18 @@ module.exports.getUserTasks = async (req, res) => {
   try {
     const userId = req.userId
 
+    console.log('Fetching tasks for user:', userId)
+
     const tasks = await prisma.task.findMany({
       where: { userId },
       orderBy: { date: 'desc' }
     })
 
+    console.log('Fetched tasks:', tasks)
+
     res.json(tasks)
   } catch (error) {
-    console.error(error)
+    console.error('Error in getUserTasks controller:', error)
     res.status(500).json({ message: 'Error fetching tasks' })
   }
 }
