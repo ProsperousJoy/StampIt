@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DB_URL")
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum StampDesign {
+  one
+  two
+  three
+}
+
+enum BoardPeriod {
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+model Task {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  status      TaskStatus  @default(TODO)
+  date        DateTime    @default(now())
+  userId      String      @db.ObjectId
+  user        User        @relation(fields: [userId], references: [id])
+  stampId     String?     @db.ObjectId
+  stamp       Stamp?      @relation(fields: [stampId], references: [id])
+}
+
+model Stamp {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  design        StampDesign
+  dateCompleted DateTime    @default(now())
+  quote         String
+  tasks         Task[]
+  userId        String      @db.ObjectId
+  user          User        @relation(fields: [userId], references: [id])
+  boardId       String      @db.ObjectId
+  board         StampBoard  @relation(fields: [boardId], references: [id])
+}
+
+model StampBoard {
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  period        BoardPeriod  @default(WEEKLY)
+  startDate     DateTime     @default(now())
+  endDate       DateTime
+  stamps        Stamp[]
+  userId        String       @db.ObjectId
+  user          User         @relation(fields: [userId], references: [id])
+}
+
+model User {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  email         String        @unique
+  name          String?
+  tasks         Task[]        
+  stamps        Stamp[]      
+  stampBoards   StampBoard[]
+}
