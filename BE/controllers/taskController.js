@@ -96,8 +96,8 @@ module.exports.updateTaskStatus = async (req, res) => {
           data: {
             userId,
             boardId: currentBoard.id,
-            design: 'one', // You can randomize this
-            quote: "Great job completing your tasks!", // Can be a dynamic quote
+            design: 'one',
+            quote: "Great job completing your tasks!",
             tasks: {
               connect: await prisma.task.findMany({
                 where: { 
