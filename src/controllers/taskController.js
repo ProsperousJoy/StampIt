@@ -1,5 +1,5 @@
 const prisma = require('../../config/prisma')
-const { getRandomQuote } = require('../controllers/stampController')
+const { getRandomQuote } = require('../middleware/stampMiddleware')
 const stampData = {
   1 : "one",
   2 : "two",
@@ -12,23 +12,28 @@ module.exports.createTask = async (req, res) => {
   try {
     const { title, description } = req.body
     const userId = req.userId
+    const todayStart = new Date()
 
     console.log('Creating task for user:', userId)
 
-    // Check if user already has 3 TODO tasks
-    const todoTasksCount = await prisma.task.count({
+    // Check if user already has 3 tasks created today
+    todayStart.setHours(0, 0, 0, 0)
+
+    const tasksCreatedTodayCount = await prisma.task.count({
       where: { 
         userId, 
-        status: 'TODO' 
+        date: {
+          gte: todayStart
+        }
       }
     })
 
-    console.log('Current TODO task count for user', userId, ':', todoTasksCount)
+  console.log('Tasks created today for user', userId, ':', tasksCreatedTodayCount)
 
-    if (todoTasksCount >= 3) {
-      console.log('User already has 3 TODO tasks. Returning error.')
-      return res.status(400).json({ message: 'You can only have 3 tasks at a time' })
-    }
+  if (tasksCreatedTodayCount >= 3) {
+    console.log('User has already created 3 tasks today. Returning error.')
+    return res.status(400).json({ message: 'You can only create 3 tasks per day' })
+  }
 
     const task = await prisma.task.create({
       data: {
@@ -97,7 +102,7 @@ module.exports.updateTaskStatus = async (req, res) => {
       })
 
       // Await random quote
-      let randomQuote = await getRandomQuote();
+      let randomQuote = await getRandomQuote()
 
       if (currentBoard) {
         console.log('Found active stamp board:', currentBoard.id)
@@ -123,17 +128,6 @@ module.exports.updateTaskStatus = async (req, res) => {
         })
 
         console.log('New stamp created:', stamp)
-
-        // Reset completed tasks
-        await prisma.task.updateMany({
-          where: { 
-            userId, 
-            status: 'COMPLETED' 
-          },
-          data: { status: 'TODO' }
-        })
-
-        console.log('Completed tasks reset to TODO')
 
         return res.json({ task: updatedTask, stamp })
       } else {
@@ -165,5 +159,82 @@ module.exports.getUserTasks = async (req, res) => {
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: 'Error fetching tasks' })
+  }
+}
+
+module.exports.editTask = async (req, res) => {
+  try {
+    const { taskId } = req.params
+    const { title, description } = req.body
+    const userId = req.userId
+
+    console.log('Editing task:', taskId, 'by user:', userId)
+
+    // Find the task to ensure it exists and belongs to the user
+    const existingTask = await prisma.task.findUnique({
+      where: { id: taskId }
+    })
+
+    if (!existingTask) {
+      console.log('Task not found:', taskId)
+      return res.status(404).json({ message: 'Task not found' })
+    }
+
+    if (existingTask.userId !== userId) {
+      console.log('User does not own the task:', userId, 'vs task userId:', existingTask.userId)
+      return res.status(403).json({ message: 'Not authorized to edit this task' })
+    }
+
+    // Update the task
+    const updatedTask = await prisma.task.update({
+      where: { id: taskId },
+      data: {
+        title: title || existingTask.title,
+        description: description || existingTask.description
+      }
+    })
+
+    console.log('Task updated successfully:', updatedTask)
+
+    res.json(updatedTask)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Error editing task' })
+  }
+}
+
+module.exports.deleteTask = async (req, res) => {
+  try {
+    const { taskId } = req.params
+    const userId = req.userId
+
+    console.log('Deleting task:', taskId, 'by user:', userId)
+
+    // Find the task to ensure it exists and belongs to the user
+    const existingTask = await prisma.task.findUnique({
+      where: { id: taskId }
+    })
+
+    if (!existingTask) {
+      console.log('Task not found:', taskId)
+      return res.status(404).json({ message: 'Task not found' })
+    }
+
+    if (existingTask.userId !== userId) {
+      console.log('User does not own the task:', userId, 'vs task userId:', existingTask.userId)
+      return res.status(403).json({ message: 'Not authorized to delete this task' })
+    }
+
+    // Delete the task
+    await prisma.task.delete({
+      where: { id: taskId }
+    })
+
+    console.log('Task deleted successfully:', taskId)
+
+    res.json({ message: 'Task deleted successfully' })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Error deleting task' })
   }
 }

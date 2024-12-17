@@ -1,9 +1,9 @@
 const fs = require('fs')
 const Papa = require('papaparse')
 
-module.exports.getRandomQuote = () => {
+module.exports.getRandomQuote = async () => {
     return new Promise((resolve, reject) => {
-      const csvFilePath = '.../assets/quotes.csv'
+      const csvFilePath = 'D:/Projects/web/non_tutorial/StampIt/StampIt-BE/assets/quotes.csv'
       const file = fs.createReadStream(csvFilePath)
       let csvData = []
   
