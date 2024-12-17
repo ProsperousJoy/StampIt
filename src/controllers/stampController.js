@@ -26,15 +26,3 @@ module.exports.getUserStamps = async (req, res) => {
     res.status(500).json({ message: 'Error fetching stamps' })
   }
 }
-
-module.exports.getStampQuotes = async (req, res) => {
-  const quotes = [
-    "Progress is impossible without change!",
-    "Small steps lead to big achievements!",
-    "You're doing amazing!",
-    "Every task completed is a victory!",
-    "Believe in yourself!"
-  ]
-
-  res.json(quotes)
-}
