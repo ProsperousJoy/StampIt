@@ -1,4 +1,12 @@
 const prisma = require('../../config/prisma')
+const { getRandomQuote } = require('../controllers/stampController')
+const stampData = {
+  1 : "one",
+  2 : "two",
+  3 : "three",
+  4 : "four",
+  5 : "five",
+}
 
 module.exports.createTask = async (req, res) => {
   try {
@@ -88,6 +96,9 @@ module.exports.updateTaskStatus = async (req, res) => {
         }
       })
 
+      // Await random quote
+      let randomQuote = await getRandomQuote();
+
       if (currentBoard) {
         console.log('Found active stamp board:', currentBoard.id)
 
@@ -96,8 +107,8 @@ module.exports.updateTaskStatus = async (req, res) => {
           data: {
             userId,
             boardId: currentBoard.id,
-            design: 'one',
-            quote: "Great job completing your tasks!",
+            design: stampData[Math.floor(Math.random() * 5) + 1],
+            quote: randomQuote,
             tasks: {
               connect: await prisma.task.findMany({
                 where: { 

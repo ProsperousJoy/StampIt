@@ -17,6 +17,8 @@ enum StampDesign {
   one
   two
   three
+  four
+  five
 }
 
 enum BoardPeriod {
